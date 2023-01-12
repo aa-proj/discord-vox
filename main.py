@@ -48,8 +48,8 @@ class FFmpegPCMAudio(discord.AudioSource):
 client = discord.Client(intents=discord.Intents.all())
 tree = app_commands.CommandTree(client)
 guilds = []
-voiceClient = {}
-voiceSource = {}
+voiceClient: dict[str,discord.VoiceClient] = {}
+voiceSource: dict[str,list] = {}
 
 userSetting = {}
 clientSetting = {}
@@ -131,7 +131,8 @@ async def setSpeakerID(ctx: discord.Interaction, voiceid: str = None):
             userSetting[guildid][userid] = {}
         userSetting[guildid][userid]["voiceid"] = voiceid
         userSetting[guildid][userid]["name"] = ctx.user.display_name
-        with open("userList.json", "w") as f:
+        with open("userSetting.json", "w") as f:
+            print(json.dumps(userSetting))
             f.write(json.dumps(userSetting))
 
 @tree.command(
@@ -206,6 +207,9 @@ async def on_message(message: discord.Message):
 
     if message.channel.id not in clientSetting["channelIDs"]:
         return
+
+    if message.author.voice is None:
+        return
     
     wav = core.voicevox_tts(message.content,int(userSetting[guildid][str(message.author.id)]["voiceid"]))
     #with open("t.wav", "wb") as f:
@@ -219,4 +223,3 @@ async def on_message(message: discord.Message):
 
 
 client.run(clientSetting["token"])
-
