@@ -3,7 +3,8 @@ from discord.opus import Encoder
 import shlex
 import io
 import json
-import core
+import voicevox_core
+from pathlib import Path
 import discord
 from discord import app_commands
 import sys
@@ -52,44 +53,31 @@ voiceClient: dict[str,discord.VoiceClient] = {}
 voiceSource: dict[str,list] = {}
 
 userSetting = {}
-clientSetting = {}
-
-speakerID = [{"name":"四国めたん","speaker_uuid":"7ffcb7ce-00ec-4bdc-82cd-45a8889e43ff","styles":[{"id":2,"name":"ノーマル"},{"id":0,"name":"あまあま"},{"id":6,"name":"ツンツン"},{"id":4,"name":"セクシー"},{"id":36,"name":"ささやき"},{"id":37,"name":"ヒソヒソ"}],"version":"0.13.3"},{"name":"ずんだもん","speaker_uuid":"388f246b-8c41-4ac1-8e2d-5d79f3ff56d9","styles":[{"id":3,"name":"ノーマル"},{"id":1,"name":"あまあま"},{"id":7,"name":"ツンツン"},{"id":5,"name":"セクシー"},{"id":22,"name":"ささやき"},{"id":38,"name":"ヒソヒソ"}],"version":"0.13.3"},{"name":"春日部つむぎ","speaker_uuid":"35b2c544-660e-401e-b503-0e14c635303a","styles":[{"id":8,"name":"ノーマル"}],"version":"0.13.3"},{"name":"雨晴はう","speaker_uuid":"3474ee95-c274-47f9-aa1a-8322163d96f1","styles":[{"id":10,"name":"ノーマル"}],"version":"0.13.3"},{"name":"波音リツ","speaker_uuid":"b1a81618-b27b-40d2-b0ea-27a9ad408c4b","styles":[{"id":9,"name":"ノーマル"}],"version":"0.13.3"},{"name":"玄野武宏","speaker_uuid":"c30dc15a-0992-4f8d-8bb8-ad3b314e6a6f","styles":[{"id":11,"name":"ノーマル"},{"id":39,"name":"喜び"},{"id":40,"name":"ツンギレ"},{"id":41,"name":"悲しみ"}],"version":"0.13.3"},{"name":"白上虎太郎","speaker_uuid":"e5020595-5c5d-4e87-b849-270a518d0dcf","styles":[{"id":12,"name":"ふつう"},{"id":32,"name":"わーい"},{"id":33,"name":"びくびく"},{"id":34,"name":"おこ"},{"id":35,"name":"びえーん"}],"version":"0.13.3"},{"name":"青山龍星","speaker_uuid":"4f51116a-d9ee-4516-925d-21f183e2afad","styles":[{"id":13,"name":"ノーマル"}],"version":"0.13.3"},{"name":"冥鳴ひまり","speaker_uuid":"8eaad775-3119-417e-8cf4-2a10bfd592c8","styles":[{"id":14,"name":"ノーマル"}],"version":"0.13.3"},{"name":"九州そら","speaker_uuid":"481fb609-6446-4870-9f46-90c4dd623403","styles":[{"id":16,"name":"ノーマル"},{"id":15,"name":"あまあま"},{"id":18,"name":"ツンツン"},{"id":17,"name":"セクシー"},{"id":19,"name":"ささやき"}],"version":"0.13.3"},{"name":"もち子さん","speaker_uuid":"9f3ee141-26ad-437e-97bd-d22298d02ad2","styles":[{"id":20,"name":"ノーマル"}],"version":"0.13.3"},{"name":"剣崎雌雄","speaker_uuid":"1a17ca16-7ee5-4ea5-b191-2f02ace24d21","styles":[{"id":21,"name":"ノーマル"}],"version":"0.13.3"},{"name":"WhiteCUL","speaker_uuid":"67d5d8da-acd7-4207-bb10-b5542d3a663b","styles":[{"id":23,"name":"ノーマル"},{"id":24,"name":"たのしい"},{"id":25,"name":"かなしい"},{"id":26,"name":"びえーん"}],"version":"0.13.3"},{"name":"後鬼","speaker_uuid":"0f56c2f2-644c-49c9-8989-94e11f7129d0","styles":[{"id":27,"name":"人間ver."},{"id":28,"name":"ぬいぐるみver."}],"version":"0.13.3"},{"name":"No.7","speaker_uuid":"044830d2-f23b-44d6-ac0d-b5d733caa900","styles":[{"id":29,"name":"ノーマル"},{"id":30,"name":"アナウンス"},{"id":31,"name":"読み聞かせ"}],"version":"0.13.3"},{"name":"ちび式じい","speaker_uuid":"468b8e94-9da4-4f7a-8715-a22a48844f9e","styles":[{"id":42,"name":"ノーマル"}],"version":"0.13.3"},{"name":"櫻歌ミコ","speaker_uuid":"0693554c-338e-4790-8982-b9c6d476dc69","styles":[{"id":43,"name":"ノーマル"},{"id":44,"name":"第二形態"},{"id":45,"name":"ロリ"}],"version":"0.13.3"},{"name":"小夜/SAYO","speaker_uuid":"a8cc6d22-aad0-4ab8-bf1e-2f843924164a","styles":[{"id":46,"name":"ノーマル"}],"version":"0.13.3"},{"name":"ナースロボ＿タイプＴ","speaker_uuid":"882a636f-3bac-431a-966d-c5e6bba9f949","styles":[{"id":47,"name":"ノーマル"},{"id":48,"name":"楽々"},{"id":49,"name":"恐怖"},{"id":50,"name":"内緒話"}],"version":"0.13.3"}]
-
-core.initialize(False, 4)
-core.voicevox_load_openjtalk_dict("voicevox_core/open_jtalk_dic_utf_8-1.11")
-
-"""
-for id in speakerID.keys():
-    core.load_model(id)
-"""
+botSetting = {}
 
 def speakerIDList():
     tmp = ""
-    for speaker in speakerID:
-        tmp += speaker["name"] + "\n"
-        for style in speaker["styles"]:
-            id = style["id"]
-            if id>38:
-                continue
-            name = str(style["name"])
+    for speaker in voicevox_core.METAS:
+        tmp += speaker.name + "\n"
+        for style in speaker.styles:
+            id = style.id
+            name = style.name
             tmp += f"{str(id):>5}:   {name}\n"
         tmp += "\n"
     return tmp
 
 def speakerIDtoName(id: int):
-    if id>38: return None
-    for speaker in speakerID:
-        for style in speaker["styles"]:
-            if style["id"] == id:
-                return speaker["name"]+"("+style["name"]+")"
+    for speaker in voicevox_core.METAS:
+        for style in speaker.styles:
+            if style.id == id:
+                return speaker.name+"("+style.name+")"
     return None
 
-with open("clientSetting.json") as f:
+with open("botSetting.json") as f:
     string = f.read()
     if string != "":
-        clientSetting = json.loads(string)
-        for id in clientSetting["guildIDs"]:
+        botSetting = json.loads(string)
+        for id in botSetting["guildIDs"]:
             guilds.append(discord.Object(id=id))
 
 with open("userSetting.json") as f:
@@ -98,11 +86,10 @@ with open("userSetting.json") as f:
     if string != "":
         userSetting = json.loads(string)
     print(userSetting)
-    #if "users" not in userSetting:
-    #    userSetting["users"] = {}
+
+core = voicevox_core.VoicevoxCore(open_jtalk_dict_dir=Path(botSetting["jtalkPath"]))
 
 @tree.command(
-    #guild=targetGuild,
     guilds=guilds,
     name="texvoice",
     description="Voiceの選択" 
@@ -136,7 +123,6 @@ async def setSpeakerID(ctx: discord.Interaction, voiceid: str = None):
             f.write(json.dumps(userSetting))
 
 @tree.command(
-    #guild=targetGuild,
     guilds=guilds,
     name="join",
     description="TextVoiceを通話に参加させます。"
@@ -149,7 +135,6 @@ async def join(ctx: discord.Interaction):
     await ctx.response.send_message("接続しました。",ephemeral=True)
 
 @tree.command(
-    #guild=targetGuild,
     guilds=guilds,
     name="left",
     description="TextVoiceを通話から切断します。" 
@@ -205,21 +190,22 @@ async def on_message(message: discord.Message):
     if str(message.author.id) not in userSetting[guildid]:
         return
 
-    if message.channel.id not in clientSetting["channelIDs"]:
+    if message.channel.id not in botSetting["channelIDs"]:
         return
 
     if message.author.voice is None:
         return
     
-    wav = core.voicevox_tts(message.content,int(userSetting[guildid][str(message.author.id)]["voiceid"]))
-    #with open("t.wav", "wb") as f:
-    #   f.write(wav)
+    speakerid = int(userSetting[guildid][str(message.author.id)]["voiceid"])
+
+    if not core.is_model_loaded(speaker_id=speakerid):
+        core.load_model(speaker_id=speakerid)
+
+    wav = core.tts(text=message.content,speaker_id=speakerid)
     hoge = FFmpegPCMAudio(wav,pipe = True,stderr= sys.stderr)
     voiceSource[guildid].append(hoge)
     if voiceClient[guildid].is_playing():
         return
     playPop(message,voiceClient[guildid])
 
-
-
-client.run(clientSetting["token"])
+client.run(botSetting["token"])
